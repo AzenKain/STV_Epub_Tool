@@ -1,5 +1,5 @@
 import { createWorker, Worker } from 'tesseract.js';
-import { BrowserContext, Page, chromium } from "playwright";
+import { BrowserContext, Page, chromium, Locator } from "playwright";
 import fs from "fs";
 import path from "path";
 import { EPub } from 'epub-gen-memory';
@@ -7,12 +7,23 @@ import type { Options, Chapter } from 'epub-gen-memory';
 import slugify from 'slugify';
 import * as readline from 'readline';
 
-type ChapterInfo = {
-    url: string;
+type ChapterData = {
     title: string;
+    url: string;
+    content: string;
 };
 
+let cacheData : Record<string, ChapterData[]> = {}
+
 let worker: Worker | null = null;
+
+let optionEpub: Options | null = null;
+
+let contentEpub: Chapter[] = [];
+
+let chapters: {title: string, url: string}[] = [];
+
+let titleEpub : string = "";
 
 async function closeAllPages(context: BrowserContext) {
     const pages = context.pages();
@@ -159,7 +170,7 @@ async function init(): Promise<BrowserContext> {
     return context;
 }
 
-async function crawlChapter(page: Page, dto: ChapterInfo): Promise<string> {
+async function crawlChapter(page: Page): Promise<string> {
     // Random delay
     await humanBehavior(page);
     const captchaSelector = 'div#captcha';;
@@ -242,7 +253,7 @@ async function crawlNovel(page: Page, url: string) {
     });
 
     await humanBehavior(page);
-    const chapters = await page.$$eval("div#chaptercontainerinner a.listchapitem", els =>
+    chapters = await page.$$eval("div#chaptercontainerinner a.listchapitem", els =>
         els.map((el, i) => ({
             url: window.location.href + (i + 1) + '/',
             title: (el as HTMLAnchorElement).title || "",
@@ -294,12 +305,9 @@ async function crawlNovel(page: Page, url: string) {
                 break;
         }
     });
-    const outputDir = path.join(process.cwd(), "output");
-    if (!fs.existsSync(outputDir)) {
-        fs.mkdirSync(outputDir, { recursive: true });
-    }
 
-    const option: Options = {
+    titleEpub = hanviet;
+    optionEpub = {
         title: hanviet,
         author: author,
         date: date,
@@ -311,37 +319,38 @@ async function crawlNovel(page: Page, url: string) {
         publisher: origin,
     };
 
-    const content: Chapter[] = [{
+    contentEpub = [{
         title: "Bìa",
         content: `<div style="text-align:center;"><img src="${imgSrc}" alt="Bìa sách" style="max-width:100%;height:auto;"></div>`,
         excludeFromToc: true,
         beforeToc: true
     }]
 
-
-    const firstChapter = page.locator("div#chaptercontainerinner a.listchapitem").first();
-
-    await firstChapter.scrollIntoViewIfNeeded();
-    await firstChapter.waitFor({ state: "visible" });
-    await page.waitForTimeout(Math.floor(Math.random() * 1000 + 500));
-    await Promise.all([
-        page.waitForNavigation({ waitUntil: 'load', timeout: 0 }),
-        firstChapter.click(),
-    ]);
-
-    for (let i = 0; i < chapters.length; i++) {
-        const chapter = chapters[i];
-        console.log(`⏳ Đang xử lý chương ${i + 1}/${chapters.length}: ${chapter.title}`);
-        const html = await crawlChapter(page, chapter);
-        content.push({
-            title: chapter.title,
-            content: html,
-        });
-
-        if (i === chapters.length - 1) {
-            continue
+    if (url in cacheData) {
+        for (let i = 0; i < cacheData[url].length; i++) {
+            const chapter = cacheData[url][i];
+            contentEpub.push({
+                title: chapter.title,
+                content: chapter.content,
+            });
         }
+    } else {
+        cacheData[url] = []
+    }
 
+
+    if (cacheData[url].length === 0) {
+        const firstChapter = page.locator("div#chaptercontainerinner a.listchapitem").first();
+        await firstChapter.scrollIntoViewIfNeeded();
+        await firstChapter.waitFor({ state: "visible" });
+        await page.waitForTimeout(Math.floor(Math.random() * 1000 + 500));
+        await Promise.all([
+            page.waitForNavigation({ waitUntil: 'load', timeout: 0 }),
+            firstChapter.click(),
+        ]);
+    } else {
+        await page.goto(cacheData[url][cacheData[url].length - 1].url, { waitUntil: 'load', timeout: 0 });
+        await humanBehavior(page);
         const selectors = ["a#navnextbot", "a#navnexttop"];
         const chosenSelector = selectors[Math.floor(Math.random() * selectors.length)];
         const nextButton = page.locator(chosenSelector);
@@ -354,18 +363,71 @@ async function crawlNovel(page: Page, url: string) {
         ]);
     }
 
-    const epub = new EPub(option, content);
-    const newEpub = await epub.render()
+    let chapterIndex = 0;
 
-    const buffer = await newEpub.genEpub();
-    const slugName: string = slugify(hanviet, {
-        lower: true,
-        strict: true
-    });
-    const epubPath = path.join(outputDir, `${slugName}.epub`);
-    fs.writeFileSync(epubPath, buffer);
+    while (true) {
+        const selectors = ["a#navnextbot", "a#navnexttop"];
+        let nextButton: Locator | null = null;
 
-    console.log(`✅ EPub đã được tạo: output/${slugName}.epub`);
+        for (const sel of selectors) {
+            const button = page.locator(sel);
+            if (await button.count() > 0) {
+                nextButton = button;
+                
+                break;
+            }
+        }
+        if (!nextButton) {
+            console.log("✅ Không còn chương tiếp theo, kết thúc crawl.");
+            break;
+        }
+        let chapterTitle = `${chapterIndex + 1}, Không xác định`;
+        try {
+            await page.waitForFunction(
+                () => {
+                    const el = document.querySelector("center#bookchapnameholder");
+                    const text = el?.textContent?.trim() || "";
+                    return text !== "_" && text.length > 0;
+                },
+                { timeout: 10000 }
+            );
+
+            const chapterTitleElement = await page.locator("center#bookchapnameholder").elementHandle();
+            chapterTitle = chapterTitleElement 
+                ? (await chapterTitleElement.textContent())?.trim() || `${chapterIndex + 1}, Không xác định`
+                : `${chapterIndex + 1}, Không xác định`;
+        } catch (err) {
+            console.log("Timeout 10s, tiếp tục với title mặc định");
+        }
+
+        console.log(`⏳ Đang xử lý chương: ${chapterTitle}`);
+
+        const html = await crawlChapter(page);
+        contentEpub.push({
+            title: chapterTitle,
+            content: html,
+        });
+
+        cacheData[url].push({
+            title: chapterTitle,
+            url: page.url(),
+            content: html,
+        });
+        saveCacheData();
+
+
+
+        await nextButton.scrollIntoViewIfNeeded();
+        await nextButton.waitFor({ state: "visible" });
+        await page.waitForTimeout(Math.floor(Math.random() * 1000 + 500));
+        await Promise.all([
+            page.waitForNavigation({ waitUntil: 'load', timeout: 0 }),
+            nextButton.click(),
+        ]);
+
+        chapterIndex++;
+    }
+
 }
 
 function promptUser(question: string): Promise<string> {
@@ -397,6 +459,20 @@ function isValidSVTUrl(url: string): boolean {
     }
 }
 
+
+function loadCacheData() {
+    const cachePath = path.join(process.cwd(), "cache.json")
+    if (fs.existsSync(cachePath)) {
+        cacheData = JSON.parse(fs.readFileSync(cachePath, "utf-8"));
+    }
+    return;
+}
+
+function saveCacheData() {
+    const cachePath = path.join(process.cwd(), "cache.json")
+    fs.writeFileSync(cachePath, JSON.stringify(cacheData));
+}
+
 (async () => {
     const url = await promptUser("Vui lòng nhập URL truyện trên SVT cần crawl\nVí dụ: https://sangtacviet.app/truyen/sangtac/1/42585/: ");
 
@@ -414,6 +490,9 @@ function isValidSVTUrl(url: string): boolean {
         worker = await createWorker('vie');
     }
 
+    loadCacheData();
+    
+
     const context = await init();
     const page = await context.newPage();
 
@@ -424,6 +503,30 @@ function isValidSVTUrl(url: string): boolean {
     } finally {
         await closeAllPages(context);
         await context.close();
+    }
+
+    if (!optionEpub || contentEpub.length === 0) {
+        console.log("❌ Không có dữ liệu để tạo EPub!");
         process.exit(0);
     }
+    const slugName: string = slugify(titleEpub || "book", {
+        lower: true,
+        strict: true
+    });
+    const outputDir = path.join(process.cwd(), "output");
+    if (!fs.existsSync(outputDir)) {
+        fs.mkdirSync(outputDir, { recursive: true });
+    }    
+
+    const lastContent = contentEpub.filter(ct => chapters.findIndex(ch => ch.title === ct.title) !== -1);
+    const epub = new EPub(optionEpub!, lastContent);
+    const newEpub = await epub.render()
+
+    const buffer = await newEpub.genEpub();
+
+    const epubPath = path.join(outputDir, `${slugName}.epub`);
+    fs.writeFileSync(epubPath, buffer);
+
+    console.log(`✅ EPub đã được tạo: output/${slugName}.epub`);
+    process.exit(0);
 })();

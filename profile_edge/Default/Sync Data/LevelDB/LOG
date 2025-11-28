@@ -1,3 +1,3 @@
-2025/11/28-20:03:02.092 1440 Reusing MANIFEST D:\Work_Code\stv_crawl\profile_edge\Default\Sync Data\LevelDB/MANIFEST-000001
-2025/11/28-20:03:02.094 1440 Recovering log #3
-2025/11/28-20:03:02.095 1440 Reusing old log D:\Work_Code\stv_crawl\profile_edge\Default\Sync Data\LevelDB/000003.log 
+2025/11/28-22:58:17.144 d2c Reusing MANIFEST D:\Work_Code\stv_crawl\profile_edge\Default\Sync Data\LevelDB/MANIFEST-000001
+2025/11/28-22:58:17.147 d2c Recovering log #3
+2025/11/28-22:58:17.147 d2c Reusing old log D:\Work_Code\stv_crawl\profile_edge\Default\Sync Data\LevelDB/000003.log 
