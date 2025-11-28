@@ -1,4 +1,4 @@
-import { createWorker } from 'tesseract.js';
+import { createWorker, Worker } from 'tesseract.js';
 import { BrowserContext, Page, chromium } from "playwright";
 import fs from "fs";
 import path from "path";
@@ -11,6 +11,8 @@ type ChapterInfo = {
     url: string;
     title: string;
 };
+
+let worker: Worker | null = null;
 
 async function closeAllPages(context: BrowserContext) {
     const pages = context.pages();
@@ -42,17 +44,64 @@ function textToHtml(ocrText: string): string {
     return bodyHtml;
 }
 
+function sleep(ms: number) {
+    return new Promise(r => setTimeout(r, ms));
+}
+
+async function humanBehavior(page: Page) {
+    // random mouse moves
+    for (let i = 0; i < 5; i++) {
+        const x = Math.floor(Math.random() * 700) + 100;
+        const y = Math.floor(Math.random() * 500) + 100;
+        await page.mouse.move(x, y, { steps: Math.floor(Math.random() * 20) + 5 });
+        await sleep(Math.random() * 400 + 200);
+    }
+
+    // scroll down in chunks
+    await page.evaluate(() => {
+    let total = 0;
+    const step = 20;
+    const interval = setInterval(() => {
+        window.scrollBy(0, step);
+        total += step;
+        if (total >= window.innerHeight * 0.8) clearInterval(interval);
+    }, 15 + Math.random() * 20); // 15–35ms per step
+    });
+    await sleep(Math.random() * 500 + 300);
+
+    // pause and scroll up
+    await sleep(Math.random() * 500 + 500);
+    await page.evaluate(() => {
+        window.scrollBy(0, -window.innerHeight * 0.5);
+    });
+    await sleep(Math.random() * 500 + 300);
+
+    for (let i = 0; i < 3; i++) {
+        await page.mouse.move(Math.random() * 10 - 5, Math.random() * 10 - 5, { steps: 3 });
+        await sleep(Math.random() * 200 + 100);
+    }
+}
+
+function randomViewport() {
+    return {
+        width: 1200 + Math.floor(Math.random() * 200),   // 1200–1400
+        height: 700 + Math.floor(Math.random() * 200)    // 700–900
+    };
+}
+
 
 async function init(): Promise<BrowserContext> {
 
     const userDataDir = "./profile_edge";
-
+    const extPath = path.join(process.cwd(), "extensions", "ublock");
     const context = await chromium.launchPersistentContext(userDataDir, {
-        channel: "msedge",
+        channel: "chrome",
         headless: false,
-        userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
         args: [
             '--disable-blink-features=AutomationControlled',
+            `--disable-extensions-except=${extPath}`,
+            `--load-extension=${extPath}`,
             '--disable-features=IsolateOrigins,site-per-process,OptimizationGuideModelDownloading',
             '--disable-infobars',
             '--no-sandbox',
@@ -60,7 +109,7 @@ async function init(): Promise<BrowserContext> {
             '--no-default-browser-check',
             '--start-maximized',
         ],
-        viewport: { width: 1200, height: 900 },
+        viewport: randomViewport(),
         locale: "vi-VN",
         bypassCSP: true,
         ignoreHTTPSErrors: true,
@@ -68,7 +117,7 @@ async function init(): Promise<BrowserContext> {
         serviceWorkers: "allow",
     });
     await context.addInitScript(() => {
-        Object.defineProperty(navigator, "webdriver", { get: () => false });
+        Object.defineProperty(navigator, "webdriver", { get: () => undefined });
 
         Object.defineProperty(navigator, "plugins", {
             get: () => [1, 2, 3],
@@ -82,12 +131,12 @@ async function init(): Promise<BrowserContext> {
             get: () => "Win32",
         });
 
-        const globalWindow = window as any; 
+        const globalWindow = window as any;
         if (globalWindow?.chrome && typeof globalWindow?.chrome === 'object') {
-            globalWindow.chrome.app = { 
-                isInstalled: false, 
-                getDetails: () => null, 
-                getIsInstalled: () => false 
+            globalWindow.chrome.app = {
+                isInstalled: false,
+                getDetails: () => null,
+                getIsInstalled: () => false
             };
         }
 
@@ -105,18 +154,14 @@ async function init(): Promise<BrowserContext> {
         "accept-language": "vi-VN,vi;q=0.9,en-US;q=0.8,en;q=0.7",
     });
 
+    await context.route("**/*", (route) => route.continue());
+
     return context;
 }
 
 async function crawlChapter(page: Page, dto: ChapterInfo): Promise<string> {
-    await page.goto(dto.url, { waitUntil: "load", timeout: 0 });
-
     // Random delay
-    await page.waitForTimeout(Math.floor(Math.random() * 5000 + 2000));
-
-    await page.evaluate(() => window.scrollBy(0, window.innerHeight))
-
-
+    await humanBehavior(page);
     const captchaSelector = 'div#captcha';;
 
     const captchaPresent = await page.$(captchaSelector);
@@ -139,21 +184,27 @@ async function crawlChapter(page: Page, dto: ChapterInfo): Promise<string> {
 
     if (needUnlock) {
         await page.click("#content-container");
-        await page.waitForTimeout(1000);
+        await page.waitForTimeout(Math.floor(Math.random() * 1000 + 500));
     }
 
+    await humanBehavior(page);
     await page.waitForFunction(() => {
         const el = document.querySelector("#content-container");
         if (!el) return false;
         return !el.textContent.includes("Nhấp vào để tải chương...") && !el.textContent.includes("Đang tải chương...");
     }, { timeout: 0 });
 
-    const worker = await createWorker('vie');
+
+    if (!worker) {
+        worker = await createWorker('vie');
+    }
     try {
         await page.waitForSelector("#content-container", { timeout: 0 });
         const contentElement = page.locator("#content-container");
         const screenshotBuffer = await contentElement.screenshot();
-        const { data } = await worker.recognize(screenshotBuffer);
+        const { data } = await worker?.recognize(screenshotBuffer);
+
+        await humanBehavior(page);
         return textToHtml(data.text);
 
     } catch (error) {
@@ -167,11 +218,10 @@ async function crawlNovel(page: Page, url: string) {
     await page.goto(url, { waitUntil: "load", timeout: 0 });
 
     // Scroll to simulate user activity
-    await page.waitForTimeout(Math.floor(Math.random() * 5000 + 2000));
     await page.evaluate(() => window.scrollBy(0, window.innerHeight))
+    await humanBehavior(page);
 
-    const captchaSelector = 'div#captcha';;
-
+    const captchaSelector = 'div#captcha';
     const captchaPresent = await page.$(captchaSelector);
 
     if (captchaPresent) {
@@ -191,6 +241,7 @@ async function crawlNovel(page: Page, url: string) {
         return !text.includes("Đang tải danh sách chương...");
     });
 
+    await humanBehavior(page);
     const chapters = await page.$$eval("div#chaptercontainerinner a.listchapitem", els =>
         els.map((el, i) => ({
             url: window.location.href + (i + 1) + '/',
@@ -198,6 +249,10 @@ async function crawlNovel(page: Page, url: string) {
         }))
     );
 
+    if (chapters.length == 0) {
+        console.log("Không có chapter nào!")
+        return
+    }
     const bookSummary = await page.$eval("#book-sumary", (div: HTMLDivElement) => div.innerText.trim());
 
     const texts = await page.$$eval("div.blk-body.ib-100", (divs: HTMLDivElement[]) =>
@@ -263,6 +318,17 @@ async function crawlNovel(page: Page, url: string) {
         beforeToc: true
     }]
 
+
+    const firstChapter = page.locator("div#chaptercontainerinner a.listchapitem").first();
+
+    await firstChapter.scrollIntoViewIfNeeded();
+    await firstChapter.waitFor({ state: "visible" });
+    await page.waitForTimeout(Math.floor(Math.random() * 1000 + 500));
+    await Promise.all([
+        page.waitForNavigation({ waitUntil: 'load', timeout: 0 }),
+        firstChapter.click(),
+    ]);
+
     for (let i = 0; i < chapters.length; i++) {
         const chapter = chapters[i];
         console.log(`⏳ Đang xử lý chương ${i + 1}/${chapters.length}: ${chapter.title}`);
@@ -271,6 +337,21 @@ async function crawlNovel(page: Page, url: string) {
             title: chapter.title,
             content: html,
         });
+
+        if (i === chapters.length - 1) {
+            continue
+        }
+
+        const selectors = ["a#navnextbot", "a#navnexttop"];
+        const chosenSelector = selectors[Math.floor(Math.random() * selectors.length)];
+        const nextButton = page.locator(chosenSelector);
+        await nextButton.scrollIntoViewIfNeeded();
+        await nextButton.waitFor({ state: "visible" });
+        await page.waitForTimeout(Math.floor(Math.random() * 1000 + 500));
+        await Promise.all([
+            page.waitForNavigation({ waitUntil: 'load', timeout: 0 }),
+            nextButton.click(),
+        ]);
     }
 
     const epub = new EPub(option, content);
@@ -327,6 +408,10 @@ function isValidSVTUrl(url: string): boolean {
     if (!isValidSVTUrl(url.trim())) {
         console.log("❌ URL không hợp lệ hoặc không phải URL truyện SVT!");
         process.exit(0);
+    }
+
+    if (!worker) {
+        worker = await createWorker('vie');
     }
 
     const context = await init();

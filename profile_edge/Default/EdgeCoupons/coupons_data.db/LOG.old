@@ -1,6 +1,6 @@
-2025/11/28-16:25:59.111 3ea4 Reusing MANIFEST D:\Work_Code\stv_crawl\profile_edge\Default\EdgeCoupons/coupons_data.db/MANIFEST-000001
-2025/11/28-16:25:59.112 3ea4 Recovering log #52
-2025/11/28-16:25:59.113 3ea4 Reusing old log D:\Work_Code\stv_crawl\profile_edge\Default\EdgeCoupons/coupons_data.db/000052.log 
-2025/11/28-16:25:59.148 44d0 Level-0 table #56: started
-2025/11/28-16:25:59.153 44d0 Level-0 table #56: 672624 bytes OK
-2025/11/28-16:25:59.154 44d0 Delete type=0 #52
+2025/11/28-17:51:31.676 44fc Reusing MANIFEST D:\Work_Code\stv_crawl\profile_edge\Default\EdgeCoupons/coupons_data.db/MANIFEST-000001
+2025/11/28-17:51:31.676 44fc Recovering log #62
+2025/11/28-17:51:31.677 44fc Reusing old log D:\Work_Code\stv_crawl\profile_edge\Default\EdgeCoupons/coupons_data.db/000062.log 
+2025/11/28-17:51:31.804 160 Level-0 table #66: started
+2025/11/28-17:51:31.806 160 Level-0 table #66: 672624 bytes OK
+2025/11/28-17:51:31.808 160 Delete type=0 #62
