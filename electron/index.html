@@ -529,23 +529,7 @@
 
           .folder-container {
             position: relative;
-            width: 60px; /* Scaled down from w-60 (240px) to fit button area, or keep large? User said "replace ols", likely wants it as a button replacement. 240px is huge for a button. I will scale it to be icon-sized, e.g. 40px or 60px. Wait, the user code is w-60 h-40. That's a big card. The user might want a big card. Let's look at the context. It's in .actions next to "Start Extraction". "Start Extraction" is a button. If I put a huge 240px card there, it will break layout.
-            However, the user provided specific code. I should probably respect the code but maybe scale it or ask.
-            Actually, looking at the user request "replace ols using new", and the code is a "Card". Maybe they want a big feature?
-            But it's "Open Folder".
-            Let's try to make it fit reasonably or use `transform: scale()` to fit it if needed.
-            Or, I can use the exact pixel values but maybe the user *wants* it to be the main thing?
-            The user's code has `w-60 h-40` (15rem x 10rem = 240px x 160px).
-            The current buttons are height 40px.
-            If I put a 160px high element there, it will expand the row.
-            I will use a scale transform to make it fit the button height roughly, or just implement it as is and let the user decide.
-            Actually, the user provided a "Card" component.
-            I will implement the CSS with a scaling factor or just use smaller dimensions that maintain the aspect ratio.
-            Let's use a class `.folder-wrapper` to handle the scaling if needed.
-            For now, I will implement the CSS with the provided proportions but maybe slightly smaller if it looks too big? No, I'll stick to the user's provided classes `w-60 h-40` implies they want that size.
-            Wait, `w-60` is 15rem = 240px.
-            I'll use the exact CSS from the user but converted.
-            */
+            width: 60px;
             width: 60px;
             height: 40px;
             perspective: 1500px;
@@ -613,8 +597,8 @@
             position: absolute;
             bottom: 0;
             width: 100%;
-            height: 39px; /* h-[156px] in original (approx 97% of 160). Here 40px height, so ~39px */
-            background: linear-gradient(to top, #f59e0b, #fbbf24); /* amber-500 to amber-400 */
+            height: 39px; 
+            background: linear-gradient(to top, #f59e0b, #fbbf24); 
             border-radius: 6px;
             border-top-right-radius: 0;
             transition: all 0.3s ease;
