@@ -1,0 +1,15 @@
+2025/11/28-16:30:16.308 1df0 Reusing MANIFEST D:\Work_Code\stv_crawl\profile_edge\Default\EdgeCoupons/coupons_data.db/MANIFEST-000001
+2025/11/28-16:30:16.309 1df0 Recovering log #55
+2025/11/28-16:30:16.310 1df0 Reusing old log D:\Work_Code\stv_crawl\profile_edge\Default\EdgeCoupons/coupons_data.db/000055.log 
+2025/11/28-16:30:16.346 1dc4 Level-0 table #59: started
+2025/11/28-16:30:16.351 1dc4 Level-0 table #59: 672624 bytes OK
+2025/11/28-16:30:16.352 1dc4 Delete type=0 #55
+2025/11/28-16:30:16.353 1dc4 Compacting 4@0 + 1@1 files
+2025/11/28-16:30:16.357 1dc4 Generated table #60@0: 3 keys, 672624 bytes
+2025/11/28-16:30:16.358 1dc4 Compacted 4@0 + 1@1 files => 672624 bytes
+2025/11/28-16:30:16.359 1dc4 compacted to: files[ 0 1 1 0 0 0 0 ]
+2025/11/28-16:30:16.360 1dc4 Delete type=2 #47
+2025/11/28-16:30:16.360 1dc4 Delete type=2 #50
+2025/11/28-16:30:16.360 1dc4 Delete type=2 #53
+2025/11/28-16:30:16.360 1dc4 Delete type=2 #56
+2025/11/28-16:30:16.360 1dc4 Delete type=2 #59
