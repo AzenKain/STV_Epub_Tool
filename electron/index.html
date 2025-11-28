@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>STV Epub Tool</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../node_modules/bootstrap-icons/font/bootstrap-icons.css">
+    <style>
+      :root {
+        --background: 0 0% 3.9%;
+        --foreground: 0 0% 98%;
+        --card: 0 0% 3.9%;
+        --card-foreground: 0 0% 98%;
+        --popover: 0 0% 3.9%;
+        --popover-foreground: 0 0% 98%;
+        --primary: 0 0% 98%;
+        --primary-foreground: 0 0% 9%;
+        --secondary: 0 0% 14.9%;
+        --secondary-foreground: 0 0% 98%;
+        --muted: 0 0% 14.9%;
+        --muted-foreground: 0 0% 63.9%;
+        --accent: 0 0% 14.9%;
+        --accent-foreground: 0 0% 98%;
+        --destructive: 0 62.8% 30.6%;
+        --destructive-foreground: 0 0% 98%;
+        --border: 0 0% 14.9%;
+        --input: 0 0% 14.9%;
+        --ring: 0 0% 83.1%;
+        --radius: 0.5rem;
+      }
+
+      * {
+        border-color: hsl(var(--border));
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        background: hsl(var(--background));
+        color: hsl(var(--foreground));
+        height: 100vh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
+      .titlebar {
+        -webkit-app-region: drag;
+        height: 48px;
+        background: hsl(var(--background));
+        border-bottom: 1px solid hsl(var(--border));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        font-weight: 600;
+        color: hsl(var(--foreground));
+        flex-shrink: 0;
+      }
+
+      .main-container {
+        flex: 1;
+        padding: 24px;
+        max-width: 1200px;
+        margin: 0 auto;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        overflow-y: auto;
+      }
+
+      .header {
+        margin-bottom: 8px;
+      }
+
+      .header h1 {
+        font-size: 30px;
+        font-weight: 600;
+        line-height: 1.2;
+        margin-bottom: 4px;
+        color: hsl(var(--foreground));
+        letter-spacing: -0.025em;
+      }
+
+      .subtitle {
+        color: hsl(var(--muted-foreground));
+        font-size: 14px;
+        font-weight: 400;
+      }
+
+      .card {
+        background: hsl(var(--card));
+        border: 1px solid hsl(var(--border));
+        border-radius: var(--radius);
+        padding: 24px;
+      }
+
+      .input-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .label {
+        font-size: 14px;
+        font-weight: 500;
+        color: hsl(var(--foreground));
+      }
+
+      .input-wrapper {
+        position: relative;
+      }
+
+      .url-input {
+        width: 100%;
+        background: hsl(var(--background));
+        border: 1px solid hsl(var(--input));
+        border-radius: var(--radius);
+        padding: 10px 12px;
+        color: hsl(var(--foreground));
+        font-size: 14px;
+        transition: all 0.2s;
+        outline: none;
+        font-family: inherit;
+      }
+
+      .url-input:hover {
+        border-color: hsl(var(--ring));
+      }
+
+      .url-input:focus {
+        border-color: hsl(var(--ring));
+        box-shadow: 0 0 0 1px hsl(var(--ring));
+      }
+
+      .url-input::placeholder {
+        color: hsl(var(--muted-foreground));
+      }
+
+      .actions {
+        display: flex;
+        gap: 12px;
+      }
+
+      .btn {
+        height: 40px;
+        padding: 0 16px;
+        border-radius: var(--radius);
+        font-weight: 500;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        white-space: nowrap;
+      }
+
+      .btn-primary {
+        background: hsl(var(--primary));
+        color: hsl(var(--primary-foreground));
+        flex: 1;
+      }
+
+      .btn-primary:hover:not(:disabled) {
+        background: hsl(var(--primary) / 0.9);
+      }
+
+      .btn-primary:active:not(:disabled) {
+        transform: scale(0.98);
+      }
+
+      .btn-primary:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .btn-secondary {
+        background: transparent;
+        border: 1px solid hsl(var(--input));
+        color: hsl(var(--foreground));
+      }
+
+      .btn-secondary:hover {
+        background: hsl(var(--accent));
+        color: hsl(var(--accent-foreground));
+      }
+
+      .btn-secondary:active {
+        transform: scale(0.98);
+      }
+
+      .console-panel {
+        background: hsl(var(--card));
+        border: 1px solid hsl(var(--border));
+        border-radius: var(--radius);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 400px;
+      }
+
+      .console-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid hsl(var(--border));
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .console-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: hsl(var(--foreground));
+      }
+
+      .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        padding: 6px 12px;
+        border-radius: calc(var(--radius) - 2px);
+        background: hsl(var(--muted));
+        color: hsl(var(--muted-foreground));
+        font-weight: 500;
+      }
+
+      .status-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 18px;
+        height: 18px;
+      }
+
+      .status-icon svg {
+        width: 100%;
+        height: 100%;
+      }
+
+      .status-badge.running {
+        background: hsl(142 76% 36% / 0.15);
+        color: #22c55e;
+      }
+
+      .status-badge.success {
+        background: hsl(142 76% 36% / 0.15);
+        color: #22c55e;
+      }
+
+      .status-badge.error {
+        background: hsl(0 84% 60% / 0.15);
+        color: #ef4444;
+      }
+
+      @keyframes pulse {
+        0%, 100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+      }
+
+      .progress-bar {
+        height: 2px;
+        background: hsl(var(--muted));
+        width: 100%;
+      }
+
+      .progress-fill {
+        height: 100%;
+        background: hsl(var(--primary));
+        width: 0%;
+        transition: width 0.3s ease;
+      }
+
+      .console-content {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+        font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+        font-size: 13px;
+        line-height: 1.7;
+      }
+
+      .console-content::-webkit-scrollbar {
+        width: 10px;
+      }
+
+      .console-content::-webkit-scrollbar-track {
+        background: transparent;
+      }
+
+      .console-content::-webkit-scrollbar-thumb {
+        background: hsl(var(--muted));
+        border-radius: 5px;
+        border: 2px solid hsl(var(--card));
+      }
+
+      .console-content::-webkit-scrollbar-thumb:hover {
+        background: hsl(var(--muted-foreground));
+      }
+
+      .log-entry {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        opacity: 0;
+        animation: fadeInUp 0.3s ease forwards;
+      }
+
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(2px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .log-time {
+        color: hsl(var(--muted-foreground));
+        min-width: 70px;
+        font-size: 12px;
+      }
+
+      .log-msg {
+        color: hsl(var(--foreground));
+        flex: 1;
+        word-break: break-word;
+      }
+
+      .log-msg.info {
+        color: hsl(var(--muted-foreground));
+      }
+
+      .log-msg.success {
+        color: #22c55e;
+      }
+
+      .log-msg.warning {
+        color: #eab308;
+      }
+
+      .log-msg.error {
+        color: #ef4444;
+      }
+
+      .empty-state {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: hsl(var(--muted-foreground));
+      }
+
+      .empty-state svg {
+        opacity: 0.5;
+        margin-bottom: 16px;
+      }
+
+      .empty-state p {
+        font-size: 14px;
+        font-weight: 400;
+      }
+
+      .completion-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 3px 10px;
+        background: hsl(142 76% 36% / 0.2);
+        border: 1px solid hsl(142 76% 36% / 0.3);
+        border-radius: calc(var(--radius) - 2px);
+        color: #22c55e;
+        font-size: 12px;
+        font-weight: 600;
+        margin-left: 8px;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+
+      .completion-badge svg {
+        width: 14px;
+        height: 14px;
+      }
+
+      .checkmark {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        display: block;
+        stroke-width: 4;
+        stroke: #22c55e;
+        stroke-miterlimit: 10;
+        box-shadow: inset 0px 0px 0px #22c55e;
+        animation: fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s both;
+      }
+
+      .checkmark__circle {
+        stroke-dasharray: 166;
+        stroke-dashoffset: 166;
+        stroke-width: 4;
+        stroke-miterlimit: 10;
+        stroke: #22c55e;
+        fill: none;
+        animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+      }
+
+      .checkmark__check {
+        transform-origin: 50% 50%;
+        stroke-dasharray: 48;
+        stroke-dashoffset: 48;
+        animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+      }
+
+      @keyframes stroke {
+        100% {
+          stroke-dashoffset: 0;
+        }
+      }
+
+      @keyframes scale {
+        0%, 100% {
+          transform: none;
+        }
+        50% {
+          transform: scale3d(1.1, 1.1, 1);
+        }
+      }
+
+      @keyframes fill {
+        100% {
+          box-shadow: inset 0px 0px 0px 30px transparent;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="titlebar">STV Epub Tool</div>
+
+    <div class="main-container">
+      <header class="header">
+        <h1>STV Epub Tool</h1>
+        <p class="subtitle">Convert Vietnamese web novels to EPUB format</p>
+      </header>
+
+      <div class="card">
+        <div class="input-group">
+          <label class="label" for="url">Novel URL</label>
+          <div class="input-wrapper">
+            <input
+              type="text"
+              class="url-input"
+              id="url"
+              placeholder="https://sangtacviet.app/truyen/..."
+              autocomplete="off"
+              spellcheck="false"
+            />
+          </div>
+        </div>
+
+        <div class="actions" style="margin-top: 16px;">
+          <button class="btn btn-primary" id="crawlBtn" onclick="startCrawl()">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            Start Extraction
+          </button>
+          <button class="btn btn-secondary" onclick="openOutput()">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+              <polyline points="9 22 9 12 15 12 15 22" />
+            </svg>
+            Open Folder
+          </button>
+        </div>
+      </div>
+
+      <div class="console-panel">
+        <div class="console-header">
+          <span class="console-title">Activity Log</span>
+          <div class="status-badge" id="statusBadge">
+            <div class="status-icon" id="statusIcon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10" opacity="0.3"/>
+                <path d="M12 6v6l4 2"/>
+              </svg>
+            </div>
+            <span id="statusText">Ready</span>
+          </div>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="console-content" id="log">
+          <div class="empty-state">
+            <svg
+              width="48"
+              height="48"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+              <line x1="16" y1="13" x2="8" y2="13" />
+              <line x1="16" y1="17" x2="8" y2="17" />
+              <polyline points="10 9 9 9 8 9" />
+            </svg>
+            <p>Waiting for input...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const logEl = document.getElementById("log");
+      const statusBadge = document.getElementById("statusBadge");
+      const statusIcon = document.getElementById("statusIcon");
+      const statusText = document.getElementById("statusText");
+      const progressFill = document.getElementById("progressFill");
+      const crawlBtn = document.getElementById("crawlBtn");
+      const urlInput = document.getElementById("url");
+
+      const statusIcons = {
+        ready: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10" opacity="0.3"/>
+          <path d="M12 6v6l4 2"/>
+        </svg>`,
+        running: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation: spin 1s linear infinite">
+          <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+        </svg>`,
+        success: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="m9 12 2 2 4-4"/>
+        </svg>`,
+        error: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="m15 9-6 6m0-6 6 6"/>
+        </svg>`
+      };
+
+      const style = document.createElement("style");
+      style.innerHTML = `@keyframes spin { 100% { transform: rotate(360deg); } }`;
+      document.head.appendChild(style);
+
+      let isFirstLog = true;
+      let currentChapterLog = null;
+
+      setStatus("ready", "Ready");
+
+      function log(message, type = "default") {
+        if (isFirstLog) {
+          logEl.innerHTML = "";
+          isFirstLog = false;
+        }
+
+        const entry = document.createElement("div");
+        entry.className = "log-entry";
+
+        const time = new Date().toLocaleTimeString("vi-VN", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        });
+
+        // Map types to CSS classes
+        const typeClass = type === "default" ? "" : type;
+
+        entry.innerHTML = `
+                <span class="log-time">${time}</span>
+                <span class="log-msg ${typeClass}">${escapeHtml(message)}</span>
+            `;
+
+        logEl.appendChild(entry);
+        logEl.scrollTop = logEl.scrollHeight;
+        return entry;
+      }
+
+      function escapeHtml(text) {
+        const div = document.createElement("div");
+        div.textContent = text;
+        return div.innerHTML;
+      }
+
+      function setStatus(status, text) {
+        statusBadge.className = `status-badge ${status}`;
+        statusIcon.innerHTML = statusIcons[status] || statusIcons.ready;
+        statusText.textContent = text;
+      }
+
+      function setProgress(percent) {
+        progressFill.style.width = `${percent}%`;
+      }
+
+      function showCompletionSeal(filename) {
+        const badge = document.createElement("div");
+        badge.className = "completion-badge";
+        badge.innerHTML = `
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="m9 12 2 2 4-4"/>
+                </svg>
+                <span>${filename}</span>
+            `;
+
+        const lastEntry = logEl.lastElementChild;
+        if (lastEntry) {
+          lastEntry.appendChild(badge);
+        } else {
+          logEl.appendChild(badge);
+        }
+        logEl.scrollTop = logEl.scrollHeight;
+      }
+
+      function isValidSVTUrl(url) {
+        try {
+          const u = new URL(url);
+          if (!u.hostname.includes("sangtacviet")) return false;
+          // Basic validation, can be improved
+          return u.pathname.includes("/truyen/");
+        } catch {
+          return false;
+        }
+      }
+
+      async function startCrawl() {
+        const url = urlInput.value.trim();
+
+        if (!url) {
+          log("Please provide a novel URL to begin extraction", "error");
+          return;
+        }
+
+        if (!isValidSVTUrl(url)) {
+          log(
+            "Invalid URL format. Please use: https://sangtacviet.app/truyen/...",
+            "error"
+          );
+          return;
+        }
+
+        isFirstLog = true;
+        crawlBtn.disabled = true;
+        crawlBtn.innerHTML = `
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite">
+                    <circle cx="12" cy="12" r="10" opacity="0.25"/>
+                    <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
+                </svg>
+                Processing...
+            `;
+
+        setStatus("running", "Processing");
+        setProgress(0);
+        currentChapterLog = null; // Reset current chapter log
+
+        log(`Initiating extraction: ${url}`);
+
+        window.api.onProgress((data) => {
+          if (data.type === "chapter") {
+            if (currentChapterLog) {
+              const iconWrapper = document.createElement("span");
+              iconWrapper.style.marginLeft = "8px";
+              iconWrapper.style.display = "inline-flex";
+              iconWrapper.style.alignItems = "center";
+              iconWrapper.style.verticalAlign = "middle";
+              iconWrapper.style.transform = "translateY(-1px)";
+              iconWrapper.innerHTML = `<svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                <circle class="checkmark__circle" cx="26" cy="26" r="25" fill="none"/>
+                <path class="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+              </svg>`;
+              currentChapterLog.querySelector(".log-msg").appendChild(iconWrapper);
+            }
+
+            currentChapterLog = log(`Chapter ${data.current}/${data.total}: ${data.title}`);
+            setProgress((data.current / data.total) * 100);
+            setStatus('running', `Chapter ${data.current}/${data.total}`);
+          } else if (data.type === "info") {
+            log(data.message, "info");
+          } else if (data.type === "warning") {
+            log(data.message, "warning");
+          }
+        });
+
+        try {
+          const result = await window.api.startCrawl(url);
+
+          if (result.success) {
+            if (currentChapterLog) {
+              const iconWrapper = document.createElement("span");
+              iconWrapper.style.marginLeft = "8px";
+              iconWrapper.style.display = "inline-flex";
+              iconWrapper.style.alignItems = "center";
+              iconWrapper.style.verticalAlign = "middle";
+              iconWrapper.style.transform = "translateY(-1px)";
+              iconWrapper.innerHTML = `<svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                <circle class="checkmark__circle" cx="26" cy="26" r="25" fill="none"/>
+                <path class="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+              </svg>`;
+              currentChapterLog.querySelector(".log-msg").appendChild(iconWrapper);
+            }
+
+            log("Extraction complete. EPUB generated successfully.", "success");
+            showCompletionSeal(result.result);
+            setStatus("success", "Complete");
+            setProgress(100);
+          } else {
+            console.error('[UI] Crawl failed with error:', result.error);
+            if (result.stack) {
+              console.error('[UI] Error stack trace:');
+              console.error(result.stack);
+            }
+
+            log(`Error: ${result.error}`, "error");
+
+            if (result.error.includes('not found')) {
+              log('Tip: Try rebuilding the app to ensure all resources are bundled', 'warning');
+            }
+
+            setStatus("error", "Failed");
+          }
+        } catch (err) {
+          console.error('[UI] IPC Error:', err);
+
+          log(`System Error: ${err.message}`, "error");
+          setStatus("error", "Error");
+        } finally {
+          crawlBtn.disabled = false;
+          crawlBtn.innerHTML = `
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="7 10 12 15 17 10" />
+                        <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
+                    Start Extraction
+                `;
+        }
+      }
+
+      function openOutput() {
+        window.api.openOutputFolder();
+      }
+    </script>
+  </body>
+</html>
