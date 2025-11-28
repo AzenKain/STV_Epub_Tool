@@ -33,6 +33,7 @@
         --input: 0 0% 14.9%;
         --ring: 0 0% 83.1%;
         --radius: 0.5rem;
+        --hue: 35;
       }
 
       * {
@@ -501,24 +502,370 @@
             </svg>
             Start Extraction
           </button>
-          <button class="btn btn-secondary" onclick="openOutput()">
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-              <polyline points="9 22 9 12 15 12 15 22" />
-            </svg>
-            Open Folder
-          </button>
+            <div class="folder-group" onclick="openOutput()" title="Open Output Folder">
+              <div class="folder-container">
+                <div class="folder-back"></div>
+                <div class="folder-paper paper-1"></div>
+                <div class="folder-paper paper-2"></div>
+                <div class="folder-paper paper-3"></div>
+                <div class="folder-front"></div>
+              </div>
+              <p class="folder-label">Open Folder</p>
+            </div>
+          </div>
         </div>
-      </div>
+
+        <style>
+          /* 3D Folder Animation Styles */
+          .folder-group {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            margin-left: 16px;
+          }
+
+          .folder-container {
+            position: relative;
+            width: 60px; /* Scaled down from w-60 (240px) to fit button area, or keep large? User said "replace ols", likely wants it as a button replacement. 240px is huge for a button. I will scale it to be icon-sized, e.g. 40px or 60px. Wait, the user code is w-60 h-40. That's a big card. The user might want a big card. Let's look at the context. It's in .actions next to "Start Extraction". "Start Extraction" is a button. If I put a huge 240px card there, it will break layout.
+            However, the user provided specific code. I should probably respect the code but maybe scale it or ask.
+            Actually, looking at the user request "replace ols using new", and the code is a "Card". Maybe they want a big feature?
+            But it's "Open Folder".
+            Let's try to make it fit reasonably or use `transform: scale()` to fit it if needed.
+            Or, I can use the exact pixel values but maybe the user *wants* it to be the main thing?
+            The user's code has `w-60 h-40` (15rem x 10rem = 240px x 160px).
+            The current buttons are height 40px.
+            If I put a 160px high element there, it will expand the row.
+            I will use a scale transform to make it fit the button height roughly, or just implement it as is and let the user decide.
+            Actually, the user provided a "Card" component.
+            I will implement the CSS with a scaling factor or just use smaller dimensions that maintain the aspect ratio.
+            Let's use a class `.folder-wrapper` to handle the scaling if needed.
+            For now, I will implement the CSS with the provided proportions but maybe slightly smaller if it looks too big? No, I'll stick to the user's provided classes `w-60 h-40` implies they want that size.
+            Wait, `w-60` is 15rem = 240px.
+            I'll use the exact CSS from the user but converted.
+            */
+            width: 60px;
+            height: 40px;
+            perspective: 1500px;
+            z-index: 50;
+            transform-origin: bottom;
+          }
+
+          .folder-back {
+            background-color: #d97706; /* amber-600 */
+            width: 100%;
+            height: 100%;
+            border-radius: 6px;
+            border-top-left-radius: 0;
+            transform-origin: top;
+            transition: all 0.3s ease;
+            position: relative;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+          }
+          
+          .folder-group:hover .folder-back {
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+          }
+
+          /* Folder tab (after/before pseudo-elements simulation) */
+          .folder-back::after {
+            content: '';
+            position: absolute;
+            bottom: 99%;
+            left: 0;
+            width: 20px;
+            height: 4px;
+            background-color: #d97706;
+            border-top-left-radius: 6px;
+            border-top-right-radius: 6px;
+          }
+
+          .folder-back::before {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: 19px;
+            width: 4px;
+            height: 4px;
+            background-color: #d97706;
+            clip-path: polygon(0 35%, 0% 100%, 50% 100%);
+          }
+
+          .folder-paper {
+            position: absolute;
+            inset: 1px;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            transform-origin: bottom;
+          }
+
+          .paper-1 { background-color: #a1a1aa; /* zinc-400 */ }
+          .paper-2 { background-color: #d4d4d8; /* zinc-300 */ }
+          .paper-3 { background-color: #e4e4e7; /* zinc-200 */ }
+
+          .folder-group:hover .paper-1 { transform: rotateX(-20deg); }
+          .folder-group:hover .paper-2 { transform: rotateX(-30deg); }
+          .folder-group:hover .paper-3 { transform: rotateX(-38deg); }
+
+          .folder-front {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 39px; /* h-[156px] in original (approx 97% of 160). Here 40px height, so ~39px */
+            background: linear-gradient(to top, #f59e0b, #fbbf24); /* amber-500 to amber-400 */
+            border-radius: 6px;
+            border-top-right-radius: 0;
+            transition: all 0.3s ease;
+            transform-origin: bottom;
+            z-index: 10;
+          }
+
+          /* Front folder tab */
+          .folder-front::after {
+            content: '';
+            position: absolute;
+            bottom: 99%;
+            right: 0;
+            width: 36px; /* Scaled */
+            height: 4px;
+            background-color: #fbbf24;
+            border-top-left-radius: 6px;
+            border-top-right-radius: 6px;
+          }
+
+          .folder-front::before {
+            content: '';
+            position: absolute;
+            top: -3px;
+            right: 35px;
+            width: 3px;
+            height: 3px;
+            background-color: #fbbf24;
+            clip-path: polygon(100% 14%, 50% 100%, 100% 100%);
+          }
+
+          .folder-group:hover .folder-front {
+            transform: rotateX(-46deg) translateY(1px);
+            box-shadow: inset 0 20px 40px #fbbf24, inset 0 -20px 40px #d97706;
+          }
+
+          .folder-label {
+            font-size: 12px;
+            padding-top: 4px;
+            opacity: 0.5;
+            color: hsl(var(--foreground));
+            font-weight: 500;
+          }
+
+          /* Sand Timer Loader */
+          .sand-loader {
+            --dur: 2s;
+            display: block;
+            margin: auto;
+            width: 24px; /* Scaled for button */
+            height: 24px;
+          }
+
+          .status-icon .sand-loader {
+            width: 100%;
+            height: 100%;
+          }
+
+          .loader__glare-top,
+          .loader__glare-bottom,
+          .loader__model,
+          .loader__motion-thick,
+          .loader__motion-medium,
+          .loader__motion-thin,
+          .loader__sand-drop,
+          .loader__sand-fill,
+          .loader__sand-grain-left,
+          .loader__sand-grain-right,
+          .loader__sand-line-left,
+          .loader__sand-line-right,
+          .loader__sand-mound-top,
+          .loader__sand-mound-bottom {
+            animation-duration: var(--dur);
+            animation-timing-function: cubic-bezier(0.83, 0, 0.17, 1);
+            animation-iteration-count: infinite;
+          }
+          .loader__glare-top {
+            animation-name: glare-top;
+          }
+          .loader__glare-bottom {
+            animation-name: glare-bottom;
+          }
+          .loader__model {
+            animation-name: loader-flip;
+            transform-origin: 12.25px 16.75px;
+          }
+          .loader__motion-thick,
+          .loader__motion-medium,
+          .loader__motion-thin {
+            transform-origin: 26px 26px;
+          }
+          .loader__motion-thick {
+            animation-name: motion-thick;
+          }
+          .loader__motion-medium {
+            animation-name: motion-medium;
+          }
+          .loader__motion-thin {
+            animation-name: motion-thin;
+          }
+          .loader__sand-drop {
+            animation-name: sand-drop;
+          }
+          .loader__sand-fill {
+            animation-name: sand-fill;
+          }
+          .loader__sand-grain-left {
+            animation-name: sand-grain-left;
+          }
+          .loader__sand-grain-right {
+            animation-name: sand-grain-right;
+          }
+          .loader__sand-line-left {
+            animation-name: sand-line-left;
+          }
+          .loader__sand-line-right {
+            animation-name: sand-line-right;
+          }
+          .loader__sand-mound-top {
+            animation-name: sand-mound-top;
+          }
+          .loader__sand-mound-bottom {
+            animation-name: sand-mound-bottom;
+            transform-origin: 12.25px 31.5px;
+          }
+
+          @keyframes loader-flip {
+            from { transform: translate(13.75px, 9.25px) rotate(-180deg); }
+            24%, to { transform: translate(13.75px, 9.25px) rotate(0); }
+          }
+          @keyframes glare-top {
+            from { stroke: rgba(255, 255, 255, 0); }
+            24%, to { stroke: white; }
+          }
+          @keyframes glare-bottom {
+            from { stroke: white; }
+            24%, to { stroke: rgba(255, 255, 255, 0); }
+          }
+          @keyframes motion-thick {
+            from { animation-timing-function: cubic-bezier(0.33, 0, 0.67, 0); stroke: rgba(255, 255, 255, 0); stroke-dashoffset: 153.94; transform: rotate(0.67turn); }
+            20% { animation-timing-function: cubic-bezier(0.33, 1, 0.67, 1); stroke: rgb(32, 32, 32); stroke-dashoffset: 141.11; transform: rotate(1turn); }
+            40%, to { stroke: rgba(255, 255, 255, 0); stroke-dashoffset: 153.94; transform: rotate(1.33turn); }
+          }
+          @keyframes motion-medium {
+            from, 8% { animation-timing-function: cubic-bezier(0.33, 0, 0.67, 0); stroke: rgba(255, 255, 255, 0); stroke-dashoffset: 153.94; transform: rotate(0.5turn); }
+            20% { animation-timing-function: cubic-bezier(0.33, 1, 0.67, 1); stroke: white; stroke-dashoffset: 147.53; transform: rotate(0.83turn); }
+            32%, to { stroke: rgba(255, 255, 255, 0); stroke-dashoffset: 153.94; transform: rotate(1.17turn); }
+          }
+          @keyframes motion-thin {
+            from, 4% { animation-timing-function: cubic-bezier(0.33, 0, 0.67, 0); stroke: rgba(255, 255, 255, 0); stroke-dashoffset: 153.94; transform: rotate(0.33turn); }
+            24% { animation-timing-function: cubic-bezier(0.33, 1, 0.67, 1); stroke: rgb(53, 53, 53); stroke-dashoffset: 134.7; transform: rotate(0.67turn); }
+            44%, to { stroke: rgba(255, 255, 255, 0); stroke-dashoffset: 153.94; transform: rotate(1turn); }
+          }
+          @keyframes sand-drop {
+            from, 10% { animation-timing-function: cubic-bezier(0.12, 0, 0.39, 0); stroke-dashoffset: 1; }
+            70%, to { stroke-dashoffset: -107; }
+          }
+          @keyframes sand-fill {
+            from, 10% { animation-timing-function: cubic-bezier(0.12, 0, 0.39, 0); stroke-dashoffset: 55; }
+            70%, to { stroke-dashoffset: -54; }
+          }
+          @keyframes sand-grain-left {
+            from, 10% { animation-timing-function: cubic-bezier(0.12, 0, 0.39, 0); stroke-dashoffset: 29; }
+            70%, to { stroke-dashoffset: -22; }
+          }
+          @keyframes sand-grain-right {
+            from, 10% { animation-timing-function: cubic-bezier(0.12, 0, 0.39, 0); stroke-dashoffset: 27; }
+            70%, to { stroke-dashoffset: -24; }
+          }
+          @keyframes sand-line-left {
+            from, 10% { animation-timing-function: cubic-bezier(0.12, 0, 0.39, 0); stroke-dashoffset: 53; }
+            70%, to { stroke-dashoffset: -55; }
+          }
+          @keyframes sand-line-right {
+            from, 10% { animation-timing-function: cubic-bezier(0.12, 0, 0.39, 0); stroke-dashoffset: 14; }
+            70%, to { stroke-dashoffset: -24.5; }
+          }
+          @keyframes sand-mound-top {
+            from, 10% { animation-timing-function: linear; transform: translate(0, 0); }
+            15% { animation-timing-function: cubic-bezier(0.12, 0, 0.39, 0); transform: translate(0, 1.5px); }
+            51%, to { transform: translate(0, 13px); }
+          }
+          @keyframes sand-mound-bottom {
+            from, 31% { animation-timing-function: cubic-bezier(0.61, 1, 0.88, 1); transform: scale(1, 0); }
+            56%, to { transform: scale(1, 1); }
+          }
+
+          /* Scrolling Words Loader */
+          .word-loader-card {
+            background-color: transparent;
+            padding: 0;
+            border-radius: 0;
+            display: inline-flex;
+            align-items: center;
+            vertical-align: middle;
+            margin-left: 10px;
+            transform: scale(0.8); /* Scale down slightly */
+            transform-origin: left center;
+          }
+
+          .word-loader {
+            color: hsl(var(--muted-foreground));
+            font-family: "Outfit", sans-serif;
+            font-weight: 500;
+            font-size: 14px;
+            box-sizing: content-box;
+            height: 20px;
+            padding: 0;
+            display: flex;
+            border-radius: 8px;
+          }
+
+          .words {
+            overflow: hidden;
+            position: relative;
+            height: 20px; /* Match font size/line height */
+          }
+
+          .words::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(
+              to bottom,
+              hsl(var(--card)) 0%,
+              transparent 20%,
+              transparent 80%,
+              hsl(var(--card)) 100%
+            );
+            z-index: 20;
+          }
+
+          .word {
+            display: block;
+            height: 100%;
+            padding-left: 6px;
+            color: #d97706; /* Amber-600 */
+            animation: spin_words 12s 1 forwards;
+          }
+
+          @keyframes spin_words {
+            10% { transform: translateY(-102%); }
+            25% { transform: translateY(-100%); }
+            35% { transform: translateY(-202%); }
+            50% { transform: translateY(-200%); }
+            60% { transform: translateY(-302%); }
+            75% { transform: translateY(-300%); }
+            85% { transform: translateY(-402%); }
+            100% { transform: translateY(-400%); }
+          }
+        </style>
 
       <div class="console-panel">
         <div class="console-header">
@@ -560,6 +907,196 @@
       </div>
     </div>
 
+    <template id="loader-template">
+      <svg
+        aria-label="loader being flipped clockwise and circled by three white curves fading in and out"
+        role="img"
+        height="56px"
+        width="56px"
+        viewBox="0 0 56 56"
+        class="sand-loader"
+      >
+        <clipPath id="sand-mound-top">
+          <path
+            d="M 14.613 13.087 C 15.814 12.059 19.3 8.039 20.3 6.539 C 21.5 4.789 21.5 2.039 21.5 2.039 L 3 2.039 C 3 2.039 3 4.789 4.2 6.539 C 5.2 8.039 8.686 12.059 9.887 13.087 C 11 14.039 12.25 14.039 12.25 14.039 C 12.25 14.039 13.5 14.039 14.613 13.087 Z"
+            class="loader__sand-mound-top"
+          ></path>
+        </clipPath>
+        <clipPath id="sand-mound-bottom">
+          <path
+            d="M 14.613 20.452 C 15.814 21.48 19.3 25.5 20.3 27 C 21.5 28.75 21.5 31.5 21.5 31.5 L 3 31.5 C 3 31.5 3 28.75 4.2 27 C 5.2 25.5 8.686 21.48 9.887 20.452 C 11 19.5 12.25 19.5 12.25 19.5 C 12.25 19.5 13.5 19.5 14.613 20.452 Z"
+            class="loader__sand-mound-bottom"
+          ></path>
+        </clipPath>
+        <g transform="translate(2,2)">
+          <g
+            transform="rotate(-90,26,26)"
+            stroke-linecap="round"
+            stroke-dashoffset="153.94"
+            stroke-dasharray="153.94 153.94"
+            stroke="hsl(0,0%,100%)"
+            fill="none"
+          >
+            <circle
+              transform="rotate(0,26,26)"
+              r="24.5"
+              cy="26"
+              cx="26"
+              stroke-width="2.5"
+              class="loader__motion-thick"
+            ></circle>
+            <circle
+              transform="rotate(90,26,26)"
+              r="24.5"
+              cy="26"
+              cx="26"
+              stroke-width="1.75"
+              class="loader__motion-medium"
+            ></circle>
+            <circle
+              transform="rotate(180,26,26)"
+              r="24.5"
+              cy="26"
+              cx="26"
+              stroke-width="1"
+              class="loader__motion-thin"
+            ></circle>
+          </g>
+          <g transform="translate(13.75,9.25)" class="loader__model">
+            <path
+              d="M 1.5 2 L 23 2 C 23 2 22.5 8.5 19 12 C 16 15.5 13.5 13.5 13.5 16.75 C 13.5 20 16 18 19 21.5 C 22.5 25 23 31.5 23 31.5 L 1.5 31.5 C 1.5 31.5 2 25 5.5 21.5 C 8.5 18 11 20 11 16.75 C 11 13.5 8.5 15.5 5.5 12 C 2 8.5 1.5 2 1.5 2 Z"
+              fill="hsl(var(--hue),90%,85%)"
+            ></path>
+
+            <g stroke-linecap="round" stroke="hsl(35,90%,90%)">
+              <line
+                y2="20.75"
+                x2="12"
+                y1="15.75"
+                x1="12"
+                stroke-dasharray="0.25 33.75"
+                stroke-width="1"
+                class="loader__sand-grain-left"
+              ></line>
+              <line
+                y2="21.75"
+                x2="12.5"
+                y1="16.75"
+                x1="12.5"
+                stroke-dasharray="0.25 33.75"
+                stroke-width="1"
+                class="loader__sand-grain-right"
+              ></line>
+              <line
+                y2="31.5"
+                x2="12.25"
+                y1="18"
+                x1="12.25"
+                stroke-dasharray="0.5 107.5"
+                stroke-width="1"
+                class="loader__sand-drop"
+              ></line>
+              <line
+                y2="31.5"
+                x2="12.25"
+                y1="14.75"
+                x1="12.25"
+                stroke-dasharray="54 54"
+                stroke-width="1.5"
+                class="loader__sand-fill"
+              ></line>
+              <line
+                y2="31.5"
+                x2="12"
+                y1="16"
+                x1="12"
+                stroke-dasharray="1 107"
+                stroke-width="1"
+                stroke="hsl(35,90%,83%)"
+                class="loader__sand-line-left"
+              ></line>
+              <line
+                y2="31.5"
+                x2="12.5"
+                y1="16"
+                x1="12.5"
+                stroke-dasharray="12 96"
+                stroke-width="1"
+                stroke="hsl(35,90%,83%)"
+                class="loader__sand-line-right"
+              ></line>
+
+              <g stroke-width="0" fill="hsl(35,90%,90%)">
+                <path
+                  d="M 12.25 15 L 15.392 13.486 C 21.737 11.168 22.5 2 22.5 2 L 2 2.013 C 2 2.013 2.753 11.046 9.009 13.438 L 12.25 15 Z"
+                  clip-path="url(#sand-mound-top)"
+                ></path>
+                <path
+                  d="M 12.25 18.5 L 15.392 20.014 C 21.737 22.332 22.5 31.5 22.5 31.5 L 2 31.487 C 2 31.487 2.753 22.454 9.009 20.062 Z"
+                  clip-path="url(#sand-mound-bottom)"
+                ></path>
+              </g>
+            </g>
+
+            <g stroke-width="2" stroke-linecap="round" opacity="0.7" fill="none">
+              <path
+                d="M 19.437 3.421 C 19.437 3.421 19.671 6.454 17.914 8.846 C 16.157 11.238 14.5 11.5 14.5 11.5"
+                stroke="hsl(0,0%,100%)"
+                class="loader__glare-top"
+              ></path>
+              <path
+                transform="rotate(180,12.25,16.75)"
+                d="M 19.437 3.421 C 19.437 3.421 19.671 6.454 17.914 8.846 C 16.157 11.238 14.5 11.5 14.5 11.5"
+                stroke="hsla(0,0%,100%,0)"
+                class="loader__glare-bottom"
+              ></path>
+            </g>
+
+            <rect height="2" width="24.5" fill="hsl(var(--hue),90%,50%)"></rect>
+            <rect
+              height="1"
+              width="19.5"
+              y="0.5"
+              x="2.5"
+              ry="0.5"
+              rx="0.5"
+              fill="hsl(var(--hue),90%,57.5%)"
+            ></rect>
+            <rect
+              height="2"
+              width="24.5"
+              y="31.5"
+              fill="hsl(var(--hue),90%,50%)"
+            ></rect>
+            <rect
+              height="1"
+              width="19.5"
+              y="32"
+              x="2.5"
+              ry="0.5"
+              rx="0.5"
+              fill="hsl(var(--hue),90%,57.5%)"
+            ></rect>
+          </g>
+        </g>
+      </svg>
+    </template>
+
+    <template id="chapter-loader-template">
+      <div class="word-loader-card">
+        <div class="word-loader">
+          <p>Status:</p>
+          <div class="words">
+            <span class="word">Processing</span>
+            <span class="word">Downloading</span>
+            <span class="word">Formatting</span>
+            <span class="word">Optimizing</span>
+            <span class="word">Processing</span>
+          </div>
+        </div>
+      </div>
+    </template>
+
     <script>
       const logEl = document.getElementById("log");
       const statusBadge = document.getElementById("statusBadge");
@@ -574,9 +1111,7 @@
           <circle cx="12" cy="12" r="10" opacity="0.3"/>
           <path d="M12 6v6l4 2"/>
         </svg>`,
-        running: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation: spin 1s linear infinite">
-          <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-        </svg>`,
+        running: `<div class="sand-loader">${document.getElementById('loader-template').innerHTML}</div>`,
         success: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="10"/>
           <path d="m9 12 2 2 4-4"/>
@@ -690,10 +1225,9 @@
         isFirstLog = true;
         crawlBtn.disabled = true;
         crawlBtn.innerHTML = `
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite">
-                    <circle cx="12" cy="12" r="10" opacity="0.25"/>
-                    <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
-                </svg>
+                <div class="sand-loader">
+                  ${document.getElementById('loader-template').innerHTML}
+                </div>
                 Processing...
             `;
 
@@ -706,6 +1240,10 @@
         window.api.onProgress((data) => {
           if (data.type === "chapter") {
             if (currentChapterLog) {
+              // Remove loader from previous chapter
+              const loader = currentChapterLog.querySelector('.word-loader-card');
+              if (loader) loader.remove();
+
               const iconWrapper = document.createElement("span");
               iconWrapper.style.marginLeft = "8px";
               iconWrapper.style.display = "inline-flex";
@@ -720,6 +1258,12 @@
             }
 
             currentChapterLog = log(`Chapter ${data.current}/${data.total}: ${data.title}`);
+            
+            // Append loader to current chapter
+            const loaderTemplate = document.getElementById('chapter-loader-template');
+            const loaderNode = loaderTemplate.content.cloneNode(true);
+            currentChapterLog.querySelector(".log-msg").appendChild(loaderNode);
+
             setProgress((data.current / data.total) * 100);
             setStatus('running', `Chapter ${data.current}/${data.total}`);
           } else if (data.type === "info") {
@@ -734,6 +1278,10 @@
 
           if (result.success) {
             if (currentChapterLog) {
+              // Remove loader from last chapter
+              const loader = currentChapterLog.querySelector('.word-loader-card');
+              if (loader) loader.remove();
+
               const iconWrapper = document.createElement("span");
               iconWrapper.style.marginLeft = "8px";
               iconWrapper.style.display = "inline-flex";

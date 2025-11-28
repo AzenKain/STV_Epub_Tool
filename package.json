@@ -21,7 +21,7 @@
   "build": {
     "appId": "com.azenkain.stv-epub-tool",
     "productName": "STV Epub Tool",
-    "copyright": "Copyright 2024",
+    "copyright": "Copyright 2025",
     "directories": {
       "output": "release"
     },
